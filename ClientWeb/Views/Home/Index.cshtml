@@ -1,0 +1,36 @@
+﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
+@model HomeIndexModel
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <form asp-action="GetData" asp-controller="Home" method="post">
+        <input type="nuZmber" name="value" value="@Model.Value" min="1" max="1000"/>
+        <button type="submit">Submit</button>
+    </form>
+    @if (Model.Calculated.HasValue)
+    {
+        <div>
+            <input type="text" value="@Model.Calculated"/>
+        </div>
+    }
+
+    @if (Model.Acc.HasValue)
+    {
+        <div>
+            <input type="text" value="@Model.Acc"/>
+        </div>
+    }
+</div>
+
+<br/>
+<div class="text-center">
+    <form asp-action="SetData" asp-controller="Home" method="post">
+        <input type="text" name="value" value="@Model.State"/>
+        <button type="submit">Submit</button>
+    </form>
+    <div>
+        <input type="text" value="@Model.State" readonly/>
+    </div>
+</div>
