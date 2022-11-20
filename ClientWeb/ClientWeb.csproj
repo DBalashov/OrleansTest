@@ -10,6 +10,8 @@
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="7.0.0" />
         <PackageReference Include="Microsoft.Orleans.Client" Version="7.0.0" />
         <PackageReference Include="Microsoft.Orleans.Core" Version="7.0.0" />
+        <PackageReference Include="Microsoft.Orleans.Clustering.AdoNet" Version="7.0.0" />
+        <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
     </ItemGroup>
 
     <ItemGroup>
@@ -20,5 +22,9 @@
       <Content Update="appsettings.Development.json">
         <DependentUpon>appsettings.json</DependentUpon>
       </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <AdditionalFiles Include="Views\Home\Index.cshtml" />
     </ItemGroup>
 </Project>

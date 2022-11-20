@@ -1,12 +1,20 @@
-﻿using Orleans.Configuration;
+﻿using System.Net;
+using Orleans.Configuration;
 using Serilog;
 
 #pragma warning disable CS4014
 
+const string ConnectionString    = @"Data Source=localhost,1433; Initial Catalog=Orleans;Integrated Security=True; Pooling=False;Max Pool Size=200;";
+const string ConnectionInvariant = "System.Data.SqlClient";
+const string ClusterId           = "dev";
+const string ServiceId           = "O2";
+
+var arg = Environment.GetCommandLineArgs().Skip(1).FirstOrDefault();
+
 try
 {
     const string LOG_TEMPLATE = "{Timestamp:HH:mm:ss.fff} [{Level:u3}] {Message:l}{NewLine}{Exception}";
-    
+
     using var host = Host.CreateDefaultBuilder(args)
                          .UseSerilog((context, services, configuration) =>
                                      {
@@ -27,8 +35,24 @@ try
                                      })
                          .UseOrleans(c =>
                                      {
-                                         c.AddMemoryGrainStorageAsDefault();
-                                         c.UseLocalhostClustering();
+                                         c.UseAdoNetClustering(o =>
+                                                               {
+                                                                   o.Invariant        = ConnectionInvariant;
+                                                                   o.ConnectionString = ConnectionString;
+                                                               })
+                                          .UseAdoNetReminderService(o =>
+                                                                    {
+                                                                        o.Invariant        = ConnectionInvariant;
+                                                                        o.ConnectionString = ConnectionString;
+                                                                    })
+                                          .AddAdoNetGrainStorageAsDefault(o =>
+                                                                          {
+                                                                              o.Invariant        = ConnectionInvariant;
+                                                                              o.ConnectionString = ConnectionString;
+                                                                          });
+
+                                         c.ConfigureEndpoints(IPAddress.Parse(arg ?? "192.168.100.4"), siloPort: 11111, gatewayPort: 30000);
+
                                          c.Configure<GrainCollectionOptions>(o =>
                                                                              {
                                                                                  o.CollectionAge     = TimeSpan.FromSeconds(15);
@@ -36,15 +60,14 @@ try
                                                                              })
                                           .Configure<ClusterOptions>(o =>
                                                                      {
-                                                                         o.ClusterId = "dev";
-                                                                         o.ServiceId = "O2";
+                                                                         o.ClusterId = ClusterId;
+                                                                         o.ServiceId = ServiceId;
                                                                      })
                                           .ConfigureLogging(l => l.AddConsole());
-                                         //c.ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(UnitCalculatorGrain).Assembly).WithReferences());
                                      })
                          .Build();
     host.StartAsync();
-    
+
     Console.WriteLine("\n\n Press Enter to terminate...\n\n");
     Console.ReadLine();
 
@@ -54,16 +77,3 @@ catch (Exception ex)
 {
     Console.WriteLine(ex);
 }
-
-// class SamplePlacementStrategyFixedSiloDirector : IPlacementDirector
-// {
-//     public Task<SiloAddress> OnAddActivation(PlacementStrategy strategy,
-//                                              PlacementTarget   target,
-//                                              IPlacementContext context)
-//     {
-//         var silos = context.GetCompatibleSilos(target).OrderBy(s => s).ToArray();
-//         int silo  = GetSiloNumber(target.GrainIdentity.PrimaryKey, silos.Length);
-//
-//         return Task.FromResult(silos[silo]);
-//     }
-// }

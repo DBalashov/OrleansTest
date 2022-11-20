@@ -1,7 +1,8 @@
 ﻿namespace GrainInterfaces;
 
-// public interface IStateGrain : Orleans.IGrainWithIntegerKey
-// {
-//     Task<string> Get();
-//     Task Set(string value);
-// }
+public interface IStateGrain : Orleans.IGrainWithIntegerKey
+{
+    Task<double> Get();
+
+    Task Set(double value);
+}

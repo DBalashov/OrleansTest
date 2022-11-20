@@ -1,4 +1,6 @@
-﻿namespace GrainInterfaces;
+﻿using Orleans.Placement;
+
+namespace GrainInterfaces;
 
 public interface IUnitCalculator : Orleans.IGrainWithIntegerKey
 {
