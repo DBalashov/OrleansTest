@@ -1,0 +1,12 @@
+﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
+@model HomeIndexModel
+@{
+    ViewData["Title"] = "Login Page";
+}
+
+<div class="text-center">
+    <form asp-action="Login" method="post">
+        <input type="text" name="userName" value=""/>
+        <button type="submit">Submit</button>
+    </form>
+</div>

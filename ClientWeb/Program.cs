@@ -1,5 +1,6 @@
-using System.Net;
+using ClientWeb.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.Extensions.Options;
 using Orleans.Configuration;
 using Orleans.Runtime;
 
@@ -27,13 +28,14 @@ b.Services.AddAuthentication(o =>
             });
 b.Services.AddHttpContextAccessor();
 b.Services.AddAuthorization();
+b.Services.Configure<Config>(b.Configuration.GetSection("Def"));
 
 b.Services.AddOrleansClient(c =>
                             {
-                                c.AddOutgoingGrainCallFilter(async context =>
+                                c.AddOutgoingGrainCallFilter(async ctx =>
                                                              {
                                                                  RequestContext.Set("intercepted value", "this value was added by the filter");
-                                                                 await context.Invoke();
+                                                                 await ctx.Invoke();
                                                              });
 
                                 c.Configure<ClusterOptions>(o =>
@@ -67,5 +69,8 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
+
+var s = app.Services.GetRequiredService<IOptionsMonitor<Config>>();
+s.OnChange(c => Console.WriteLine("Config changed"));
 
 app.Run();

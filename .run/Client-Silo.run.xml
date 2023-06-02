@@ -1,0 +1,7 @@
+﻿<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Client-Silo" type="CompoundRunConfigurationType">
+    <toRun name="Client" type="DotNetProject" />
+    <toRun name="Silo - 192.x" type="DotNetProject" />
+    <method v="2" />
+  </configuration>
+</component>

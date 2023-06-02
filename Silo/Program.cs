@@ -1,25 +1,24 @@
 ﻿using System.Net;
+using Grains;
 using Orleans.Configuration;
 using Serilog;
 
 #pragma warning disable CS4014
 
-const string ConnectionString    = @"Data Source=localhost,1433; Initial Catalog=Orleans;Integrated Security=True; Pooling=False;Max Pool Size=200;";
-const string ConnectionInvariant = "System.Data.SqlClient";
-const string ClusterId           = "dev";
-const string ServiceId           = "O2";
+const string ClusterId = "dev";
+const string ServiceId = "O2";
 
 var arg = Environment.GetCommandLineArgs().Skip(1).FirstOrDefault();
 
 try
 {
-    const string LOG_TEMPLATE = "{Timestamp:HH:mm:ss.fff} [{Level:u3}] {Message:l}{NewLine}{Exception}";
+    const string LOG_TEMPLATE = "{Timestamp:HH:mm:ss.fff}\t{Level:u3}\t{Message:l}{NewLine}{Exception}"; // {SourceContext}\t
 
     using var host = Host.CreateDefaultBuilder(args)
                          .UseSerilog((context, services, configuration) =>
                                      {
                                          var path    = Path.GetDirectoryName(typeof(Program).Assembly.Location);
-                                         var logFile = Path.Combine(path!, "Logs", "fmo.log");
+                                         var logFile = Path.Combine(path!, "Logs", ".log");
                                          configuration.ReadFrom.Configuration(context.Configuration)
                                                       .ReadFrom.Services(services)
                                                       .Enrich.FromLogContext()
@@ -35,40 +34,19 @@ try
                                      })
                          .UseOrleans(c =>
                                      {
-                                         c.UseAdoNetClustering(o =>
-                                                               {
-                                                                   o.Invariant        = ConnectionInvariant;
-                                                                   o.ConnectionString = ConnectionString;
-                                                               })
-                                          .UseAdoNetReminderService(o =>
-                                                                    {
-                                                                        o.Invariant        = ConnectionInvariant;
-                                                                        o.ConnectionString = ConnectionString;
-                                                                    })
-                                          .AddAdoNetGrainStorageAsDefault(o =>
-                                                                          {
-                                                                              o.Invariant        = ConnectionInvariant;
-                                                                              o.ConnectionString = ConnectionString;
-                                                                          });
-
-                                         c.ConfigureEndpoints(IPAddress.Parse(arg ?? "192.168.100.4"), siloPort: 11111, gatewayPort: 30000);
-
-                                         c.Configure<GrainCollectionOptions>(o =>
+                                         c.UseLocalhostClustering(serviceId: ServiceId, clusterId: ClusterId)
+                                          .Configure<GrainCollectionOptions>(o =>
                                                                              {
                                                                                  o.CollectionAge     = TimeSpan.FromSeconds(15);
                                                                                  o.CollectionQuantum = TimeSpan.FromSeconds(2);
                                                                              })
-                                          .Configure<ClusterOptions>(o =>
-                                                                     {
-                                                                         o.ClusterId = ClusterId;
-                                                                         o.ServiceId = ServiceId;
-                                                                     })
-                                          .ConfigureLogging(l => l.AddConsole());
+                                          .UseInMemoryReminderService()
+                                          .ConfigureLogging(l => l.AddSerilog());
                                      })
                          .Build();
     host.StartAsync();
-
-    Console.WriteLine("\n\n Press Enter to terminate...\n\n");
+    var l = host.Services.GetRequiredService<ILogger<Program>>();
+    l.LogInformation("\n\n Press Enter to terminate...\n\n");
     Console.ReadLine();
 
     await host.StopAsync();
