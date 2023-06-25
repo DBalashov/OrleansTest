@@ -1,6 +1,7 @@
-﻿using System.Net;
-using Grains;
+﻿using Microsoft.Extensions.Options;
 using Orleans.Configuration;
+using Orleans.Providers.MongoDB.Configuration;
+using Orleans.Providers.MongoDB.StorageProviders.Serializers;
 using Serilog;
 
 #pragma warning disable CS4014
@@ -34,13 +35,24 @@ try
                                      })
                          .UseOrleans(c =>
                                      {
+                                         c.Services.AddSingleton<IGrainStateSerializer, BsonGrainStateSerializer>();
                                          c.UseLocalhostClustering(serviceId: ServiceId, clusterId: ClusterId)
                                           .Configure<GrainCollectionOptions>(o =>
                                                                              {
                                                                                  o.CollectionAge     = TimeSpan.FromSeconds(15);
                                                                                  o.CollectionQuantum = TimeSpan.FromSeconds(2);
                                                                              })
-                                          .UseInMemoryReminderService()
+                                          .UseMongoDBClient("mongodb://localhost")
+                                          .UseMongoDBClustering(o =>
+                                                                {
+                                                                    o.DatabaseName = "orleans";
+                                                                    o.Strategy     = MongoDBMembershipStrategy.SingleDocument;
+                                                                })
+                                          .UseMongoDBReminders(o =>
+                                                               {
+                                                                   o.DatabaseName = "orleans";
+                                                               })
+                                          .AddMongoDBGrainStorageAsDefault((MongoDBGrainStorageOptions o) => o.DatabaseName = "orleans")
                                           .ConfigureLogging(l => l.AddSerilog());
                                      })
                          .Build();
