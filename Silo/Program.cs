@@ -1,59 +1,48 @@
-﻿using Microsoft.Extensions.Options;
+﻿using System.Net;
 using Orleans.Configuration;
 using Orleans.Providers.MongoDB.Configuration;
 using Orleans.Providers.MongoDB.StorageProviders.Serializers;
 using Serilog;
+using Shared;
 
 #pragma warning disable CS4014
 
-const string ClusterId = "dev";
-const string ServiceId = "O2";
-
-var arg = Environment.GetCommandLineArgs().Skip(1).FirstOrDefault();
+var portIncrement = int.TryParse(Environment.GetCommandLineArgs().Skip(1).FirstOrDefault(), out var port) ? port : 0;
 
 try
 {
-    const string LOG_TEMPLATE = "{Timestamp:HH:mm:ss.fff}\t{Level:u3}\t{Message:l}{NewLine}{Exception}"; // {SourceContext}\t
-
     using var host = Host.CreateDefaultBuilder(args)
-                         .UseSerilog((context, services, configuration) =>
-                                     {
-                                         var path    = Path.GetDirectoryName(typeof(Program).Assembly.Location);
-                                         var logFile = Path.Combine(path!, "Logs", ".log");
-                                         configuration.ReadFrom.Configuration(context.Configuration)
-                                                      .ReadFrom.Services(services)
-                                                      .Enrich.FromLogContext()
-                                                      .WriteTo.Console(outputTemplate: LOG_TEMPLATE)
-                                                      .WriteTo.File(logFile,
-                                                                    rollingInterval: RollingInterval.Day,
-                                                                    fileSizeLimitBytes: 100 * 1024 * 1024,
-                                                                    retainedFileCountLimit: 7,
-                                                                    rollOnFileSizeLimit: false,
-                                                                    shared: true,
-                                                                    outputTemplate: LOG_TEMPLATE,
-                                                                    flushToDiskInterval: TimeSpan.FromSeconds(3));
-                                     })
+                         .ConfigureHostConfiguration(r => r.ConfigureAppSettings())
+                         .UseSerilog((context, services, config) => config.ReadFrom.Configuration(context.Configuration)
+                                                                          .ReadFrom.Services(services)
+                                                                          .Enrich.FromLogContext())
                          .UseOrleans(c =>
                                      {
                                          c.Services.AddSingleton<IGrainStateSerializer, BsonGrainStateSerializer>();
-                                         c.UseLocalhostClustering(serviceId: ServiceId, clusterId: ClusterId)
-                                          .Configure<GrainCollectionOptions>(o =>
+                                         c.Configure<ClusterOptions>(o =>
+                                                                     {
+                                                                         o.ClusterId = OrleansConfig.ClusterId;
+                                                                         o.ServiceId = OrleansConfig.ServiceId;
+                                                                     });
+                                         c.ConfigureEndpoints(IPAddress.Loopback,
+                                                              siloPort: 11111    + portIncrement,
+                                                              gatewayPort: 30000 + portIncrement);
+
+                                         c.Configure<GrainCollectionOptions>(o =>
                                                                              {
                                                                                  o.CollectionAge     = TimeSpan.FromSeconds(15);
                                                                                  o.CollectionQuantum = TimeSpan.FromSeconds(2);
                                                                              })
-                                          .UseMongoDBClient("mongodb://localhost")
+                                          .UseMongoDBClient(OrleansConfig.MongoUrl)
                                           .UseMongoDBClustering(o =>
                                                                 {
-                                                                    o.DatabaseName = "orleans";
+                                                                    o.DatabaseName = OrleansConfig.DatabaseName;
                                                                     o.Strategy     = MongoDBMembershipStrategy.SingleDocument;
                                                                 })
-                                          .UseMongoDBReminders(o =>
-                                                               {
-                                                                   o.DatabaseName = "orleans";
-                                                               })
-                                          .AddMongoDBGrainStorageAsDefault((MongoDBGrainStorageOptions o) => o.DatabaseName = "orleans")
-                                          .ConfigureLogging(l => l.AddSerilog());
+                                          .UseMongoDBReminders(o => o.DatabaseName             = OrleansConfig.DatabaseName)
+                                          .AddMongoDBGrainStorageAsDefault(o => o.DatabaseName = OrleansConfig.DatabaseName);
+
+                                         c.AddIncomingGrainCallFilter<IncomingGrainFilter>();
                                      })
                          .Build();
     host.StartAsync();
@@ -66,4 +55,12 @@ try
 catch (Exception ex)
 {
     Console.WriteLine(ex);
+}
+
+class IncomingGrainFilter : IIncomingGrainCallFilter
+{
+    public async Task Invoke(IIncomingGrainCallContext ctx)
+    {
+        await ctx.Invoke();
+    }
 }

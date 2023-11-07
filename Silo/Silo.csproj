@@ -10,10 +10,10 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />
-        <PackageReference Include="Microsoft.Orleans.Server" Version="7.1.2" />
-        <PackageReference Include="Microsoft.Orleans.Core.Abstractions" Version="7.1.2" />
-        <PackageReference Include="Orleans.Providers.MongoDB" Version="7.5.0" />
-        <PackageReference Include="Npgsql" Version="7.0.4" />
+        <PackageReference Include="Microsoft.Orleans.Server" Version="7.2.3" />
+        <PackageReference Include="Microsoft.Orleans.Core.Abstractions" Version="7.2.3" />
+        <PackageReference Include="Orleans.Providers.MongoDB" Version="7.6.0" />
+        <PackageReference Include="Npgsql" Version="7.0.6" />
         <PackageReference Include="Serilog" Version="3.0.1" />
         <PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
         <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
@@ -23,6 +23,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Grains\Grains.csproj" />
+        <ProjectReference Include="..\Shared\Shared.csproj" />
     </ItemGroup>
 
 </Project>
