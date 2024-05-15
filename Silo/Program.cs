@@ -1,7 +1,5 @@
 ﻿using System.Net;
 using Orleans.Configuration;
-using Orleans.Providers.MongoDB.Configuration;
-using Orleans.Providers.MongoDB.StorageProviders.Serializers;
 using Serilog;
 using Shared;
 
@@ -18,38 +16,47 @@ try
                                                                           .Enrich.FromLogContext())
                          .UseOrleans(c =>
                                      {
-                                         c.Services.AddSingleton<IGrainStateSerializer, BsonGrainStateSerializer>();
-                                         c.Configure<ClusterOptions>(o =>
+                                         c.Configure<ReminderOptions>(o => o.MinimumReminderPeriod = TimeSpan.FromSeconds(3))
+                                          .Configure<ClusterOptions>(o =>
                                                                      {
                                                                          o.ClusterId = OrleansConfig.ClusterId;
                                                                          o.ServiceId = OrleansConfig.ServiceId;
-                                                                     });
-                                         c.ConfigureEndpoints(IPAddress.Loopback,
+                                                                     })
+                                          .ConfigureEndpoints(IPAddress.Loopback,
                                                               siloPort: 11111    + portIncrement,
                                                               gatewayPort: 30000 + portIncrement);
-
+                                         
                                          c.Configure<GrainCollectionOptions>(o =>
                                                                              {
                                                                                  o.CollectionAge     = TimeSpan.FromSeconds(15);
                                                                                  o.CollectionQuantum = TimeSpan.FromSeconds(2);
-                                                                             })
-                                          .UseMongoDBClient(OrleansConfig.MongoUrl)
-                                          .UseMongoDBClustering(o =>
-                                                                {
-                                                                    o.DatabaseName = OrleansConfig.DatabaseName;
-                                                                    o.Strategy     = MongoDBMembershipStrategy.SingleDocument;
-                                                                })
-                                          .UseMongoDBReminders(o => o.DatabaseName             = OrleansConfig.DatabaseName)
-                                          .AddMongoDBGrainStorageAsDefault(o => o.DatabaseName = OrleansConfig.DatabaseName);
-
-                                         c.AddIncomingGrainCallFilter<IncomingGrainFilter>();
+                                                                             });
+                                         c.UseLocalhostClustering();
+                                         // c.UseRedisClustering(o =>
+                                         //                      {
+                                         //                          o.Database         = 0;
+                                         //                          o.ConnectionString = OrleansConfig.RedisUrl;
+                                         //                      })
+                                         //  .UseRedisReminderService(o =>
+                                         //                           {
+                                         //                               o.DatabaseNumber   = 0;
+                                         //                               o.ConnectionString = OrleansConfig.RedisUrl;
+                                         //                           })
+                                         //  .AddRedisGrainStorageAsDefault(o =>
+                                         //                                 {
+                                         //                                     o.DatabaseNumber   = 0;
+                                         //                                     o.ConnectionString = OrleansConfig.RedisUrl;
+                                         //                                 });
+                                         
+                                         //c.AddIncomingGrainCallFilter<IncomingGrainFilter>();
                                      })
                          .Build();
+    
     host.StartAsync();
     var l = host.Services.GetRequiredService<ILogger<Program>>();
     l.LogInformation("\n\n Press Enter to terminate...\n\n");
     Console.ReadLine();
-
+    
     await host.StopAsync();
 }
 catch (Exception ex)
@@ -57,10 +64,15 @@ catch (Exception ex)
     Console.WriteLine(ex);
 }
 
-class IncomingGrainFilter : IIncomingGrainCallFilter
-{
-    public async Task Invoke(IIncomingGrainCallContext ctx)
-    {
-        await ctx.Invoke();
-    }
-}
+// class IncomingGrainFilter : IIncomingGrainCallFilter
+// {
+//     readonly ILogger<IncomingGrainFilter> logger;
+//
+//     public IncomingGrainFilter(ILogger<IncomingGrainFilter> logger) => this.logger = logger;
+//
+//     public async Task Invoke(IIncomingGrainCallContext ctx)
+//     {
+//         // logger.LogInformation($"Grain {ctx.Grain.GetType().Name} invoked method {ctx.InterfaceMethod.Name} with arguments {ctx.SourceId}");
+//         await ctx.Invoke();
+//     }
+// }

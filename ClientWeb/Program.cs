@@ -2,7 +2,6 @@ using ClientWeb.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Options;
 using Orleans.Configuration;
-using Orleans.Providers.MongoDB.Configuration;
 using Orleans.Runtime;
 using Serilog;
 using Shared;
@@ -53,12 +52,12 @@ b.Services.AddOrleansClient(c =>
                                                             });
 
                                 c.ConfigureServices(s => s.AddSingleton<IClientConnectionRetryFilter, ConnectionRetryFilter>());
-                                c.UseMongoDBClient(OrleansConfig.MongoUrl)
-                                 .UseMongoDBClustering(o =>
-                                                       {
-                                                           o.DatabaseName = OrleansConfig.DatabaseName;
-                                                           o.Strategy     = MongoDBMembershipStrategy.SingleDocument;
-                                                       });
+                                // c.UseMongoDBClient(OrleansConfig.MongoUrl)
+                                //  .UseMongoDBClustering(o =>
+                                //                        {
+                                //                            o.DatabaseName = OrleansConfig.DatabaseName;
+                                //                            o.Strategy     = MongoDBMembershipStrategy.SingleDocument;
+                                //                        });
                                 c.Configure<GatewayOptions>(o => o.GatewayListRefreshPeriod = TimeSpan.FromSeconds(10))
                                  .Configure<ClientMessagingOptions>(o => o.ResponseTimeout  = TimeSpan.FromSeconds(1));
                             });

@@ -2,9 +2,11 @@
 
 namespace GrainInterfaces;
 
-public interface IUnitCalculator : Orleans.IGrainWithIntegerKey
+public interface IUnitCalculator : IGrainWithIntegerKey
 {
     Task<double> Calculate(int value);
+    
+    IAsyncEnumerable<string> Powers(int value);
     
     Task<double> Multi(Parms p);
 }
