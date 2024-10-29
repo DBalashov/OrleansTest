@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using Orleans.Configuration;
+using Orleans.Runtime;
 using Serilog;
 using Shared;
 
@@ -48,7 +49,7 @@ try
                                          //                                     o.ConnectionString = OrleansConfig.RedisUrl;
                                          //                                 });
                                          
-                                         //c.AddIncomingGrainCallFilter<IncomingGrainFilter>();
+                                         c.AddIncomingGrainCallFilter<IncomingGrainFilter>();
                                      })
                          .Build();
     
@@ -64,15 +65,12 @@ catch (Exception ex)
     Console.WriteLine(ex);
 }
 
-// class IncomingGrainFilter : IIncomingGrainCallFilter
-// {
-//     readonly ILogger<IncomingGrainFilter> logger;
-//
-//     public IncomingGrainFilter(ILogger<IncomingGrainFilter> logger) => this.logger = logger;
-//
-//     public async Task Invoke(IIncomingGrainCallContext ctx)
-//     {
-//         // logger.LogInformation($"Grain {ctx.Grain.GetType().Name} invoked method {ctx.InterfaceMethod.Name} with arguments {ctx.SourceId}");
-//         await ctx.Invoke();
-//     }
-// }
+class IncomingGrainFilter(ILogger<IncomingGrainFilter> logger) : IIncomingGrainCallFilter
+{
+    public async Task Invoke(IIncomingGrainCallContext ctx)
+    {
+        var s1 = RequestContext.Get("aaa");
+        // logger.LogInformation($"Grain {ctx.Grain.GetType().Name} invoked method {ctx.InterfaceMethod.Name} with arguments {ctx.SourceId}");
+        await ctx.Invoke();
+    }
+}

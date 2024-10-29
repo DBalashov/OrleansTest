@@ -1,4 +1,5 @@
 ﻿using GrainInterfaces;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Orleans.Runtime;
 
@@ -19,12 +20,13 @@ public class UnitCalculatorGrain(ILogger<UnitCalculatorGrain> logger,
             //               null!, TimeSpan.Zero, TimeSpan.FromSeconds(3));
             await this.RegisterOrUpdateReminder("rem-" + this.GetPrimaryKeyString(), TimeSpan.Zero, TimeSpan.FromSeconds(60));
         }
-        
+
         return value * 2;
     }
-    
+
     public async IAsyncEnumerable<string> Powers(int value)
     {
+        logger.LogInformation("[{0}] {1} Powers: {2}", this.GetPrimaryKeyString(), RequestContext.Get("aaa"), value);
         while (value < 256)
         {
             value *= 2;
@@ -32,21 +34,21 @@ public class UnitCalculatorGrain(ILogger<UnitCalculatorGrain> logger,
             yield return value.ToString();
         }
     }
-    
+
     public async Task<double> Multi(Parms p) => p.X * p.Y;
-    
+
     public override Task OnActivateAsync(CancellationToken cancellationToken)
     {
         logger.LogInformation("Activate: {0} / {1}", RuntimeIdentity, IdentityString);
         return base.OnActivateAsync(cancellationToken);
     }
-    
+
     public override Task OnDeactivateAsync(DeactivationReason reason, CancellationToken cancellationToken)
     {
         logger.LogInformation("Deactivate: {0} / {1}: {2}", RuntimeIdentity, IdentityString, reason.ReasonCode.ToString());
         return base.OnDeactivateAsync(reason, cancellationToken);
     }
-    
+
     public async Task ReceiveReminder(string reminderName, TickStatus status)
     {
         var rem = await this.GetReminder("rem-" + this.GetPrimaryKeyString());
