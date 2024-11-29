@@ -23,7 +23,7 @@ while (true)
         // await stream.SubscribeAsync(OnNextAsync);
 
         Console.WriteLine("Enter string");
-        for (var i = 0; i < 3; i++)
+        for (var i = 1; i <= 1; i++)
         {
             var k = i;
             new Thread(async () =>
