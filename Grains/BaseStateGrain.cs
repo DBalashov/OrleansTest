@@ -2,17 +2,11 @@
 
 namespace Grains;
 
-public abstract class BaseStateGrain<STATE> : Grain<STATE>
+public abstract class BaseStateGrain<STATE>(ILogger logger, IClusterClient client) : Grain<STATE>
 {
-    protected readonly ILogger        Logger;
-    protected readonly IClusterClient Client;
+    protected readonly ILogger        Logger = logger;
+    protected readonly IClusterClient Client = client;
 
-    protected BaseStateGrain(ILogger logger, IClusterClient client)
-    {
-        Client = client;
-        Logger = logger;
-    }
-    
     public override Task OnActivateAsync(CancellationToken cancellationToken)
     {
         Logger.LogInformation("Activate: {0} / {1}", RuntimeIdentity, IdentityString);

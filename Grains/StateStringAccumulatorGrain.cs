@@ -6,16 +6,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Grains;
 
-public class StateStringAccumulatorGrain : BaseStateGrain<StateStringAccumulator>, IStateStringAccumulatorGrain
+public class StateStringAccumulatorGrain(ILogger<StateStringAccumulatorGrain> logger, IClusterClient client) :
+    BaseStateGrain<StateStringAccumulator>(logger, client), IStateStringAccumulatorGrain
 {
-    public StateStringAccumulatorGrain(ILogger<StateStringAccumulatorGrain> logger, IClusterClient client) : base(logger, client)
-    {
-    }
-
     public async Task<string> Add(string value)
     {
         Logger.LogInformation("Set: {0} / {1}: {2}", RuntimeIdentity, IdentityString, value);
-        
+
         if (State.Acc == null!) State.Acc = "";
         State.Acc      += value + ",";
         State.Modified =  DateTime.UtcNow;

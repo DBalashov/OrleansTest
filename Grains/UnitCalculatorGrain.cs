@@ -1,15 +1,12 @@
 ﻿using GrainInterfaces;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Orleans.Runtime;
 
 #pragma warning disable CS1998
 
 namespace Grains;
 
 public class UnitCalculatorGrain(ILogger<UnitCalculatorGrain> logger,
-                                 IClusterClient               client,
-                                 IMembershipTable             membershipTable) : Grain, IUnitCalculator, IRemindable
+                                 IClusterClient               client) : Grain, IUnitCalculator, IRemindable
 {
     public async Task<double> Calculate(int value)
     {

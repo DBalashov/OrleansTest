@@ -5,17 +5,12 @@ using Orleans.Streams;
 
 namespace Grains;
 
-public class StreamingGrain : Grain, IStreamingGrain
+public class StreamingGrain(ILogger<StreamingGrain> logger) : Grain, IStreamingGrain
 {
-    readonly ILogger        logger;
+    readonly ILogger        logger = logger;
     IAsyncStream<DateTime>? stream;
-    IDisposable             timer;
+    IDisposable?            timer;
     int                     count;
-
-    public StreamingGrain(ILogger<StreamingGrain> logger)
-    {
-        this.logger = logger;
-    }
 
     public async Task<string> Execute(int value)
     {
@@ -27,12 +22,12 @@ public class StreamingGrain : Grain, IStreamingGrain
         stream = streamProvider.GetStream<DateTime>(streamId);
 
         count = value;
-        timer = RegisterTimer(onTimer, value, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+        timer = this.RegisterGrainTimer(onTimer, value, new GrainTimerCreationOptions(TimeSpan.Zero, TimeSpan.FromSeconds(1)));
 
         return key;
     }
 
-    async Task onTimer(object o)
+    async Task onTimer(int state)
     {
         if (stream == null) return;
         logger.LogInformation("Execute.Item: [{0} - {1} - {2}], Grain timer", RuntimeIdentity, IdentityString, this.GetPrimaryKeyString());
@@ -41,7 +36,7 @@ public class StreamingGrain : Grain, IStreamingGrain
         {
             await stream.OnCompletedAsync();
             stream = null;
-            timer.Dispose();
+            timer?.Dispose();
         }
     }
 }
